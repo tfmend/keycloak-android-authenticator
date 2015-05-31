@@ -48,9 +48,11 @@ public class KeyCloakAccount {
             tokenType,
             idToken,
             notBeforePolicy,
-            sessionState;
+            sessionState,
+            refreshExpiresIn;
 
     private Long expiresOn;
+    private Long refreshExpiresOn;
 
     public KeyCloakAccount() {
     }
@@ -84,11 +86,13 @@ public class KeyCloakAccount {
         country = token.optString("country");
         claimsLocales = token.optString("claims_locales");
         expiresOn = new Date().getTime() + Long.parseLong(expiresIn) * 1000;
+        refreshExpiresOn = new Date().getTime() + Long.parseLong(refreshExpiresIn) * 1000;
     }
 
     public void extractTokenProperties(JSONObject token) {
         accessToken = token.optString("access_token");
         expiresIn = token.optString("expires_in");
+        refreshExpiresIn = token.optString("refresh_expires_in");
         refreshToken = token.optString("refresh_token");
         tokenType = token.optString("token_type");
         idToken = token.optString("id_token");
@@ -370,6 +374,10 @@ public class KeyCloakAccount {
 
     public Long getExpiresOn() {
         return expiresOn;
+    }
+
+    public Long getRefreshExpiresOn() {
+        return refreshExpiresOn;
     }
 
 }

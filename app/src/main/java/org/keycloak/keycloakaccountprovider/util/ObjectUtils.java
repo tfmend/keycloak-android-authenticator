@@ -1,7 +1,5 @@
 package org.keycloak.keycloakaccountprovider.util;
 
-import org.json.JSONObject;
-
 /**
  * Created by Summers on 9/13/2014.
  */

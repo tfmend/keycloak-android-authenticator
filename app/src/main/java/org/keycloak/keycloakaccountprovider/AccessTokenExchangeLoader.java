@@ -1,4 +1,4 @@
-package org.keycloak.keycloakaccountprovider.token;
+package org.keycloak.keycloakaccountprovider;
 
 import android.content.AsyncTaskLoader;
 import android.content.Context;
@@ -6,8 +6,8 @@ import android.content.Loader;
 import android.util.Base64;
 import android.util.Pair;
 
-import org.jboss.aerogear.android.http.HeaderAndBody;
-import org.jboss.aerogear.android.impl.http.HttpRestProvider;
+//import org.jboss.aerogear.android.http.HeaderAndBody;
+//import org.jboss.aerogear.android.impl.http.HttpRestProvider;
 import org.json.JSONObject;
 import org.keycloak.keycloakaccountprovider.KeyCloak;
 import org.keycloak.keycloakaccountprovider.KeyCloakAccount;

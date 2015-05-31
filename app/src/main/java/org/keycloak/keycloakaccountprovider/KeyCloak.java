@@ -14,7 +14,7 @@ public class KeyCloak {
 
     public static final String ACCOUNT_KEY = "org.keycloak.KeyCloakAccount";
     public static final String ACCOUNT_TYPE = "org.keycloak.Account";
-    public static final String ACCOUNT_AUTHTOKEN_TYPE = "org.keycloak.Account.authToken";
+    //public static final String AUTHTOKEN_TYPE = "org.keycloak.Account.token";
     private final KeyCloakConfig config;
     private final Context context;
 
@@ -29,9 +29,9 @@ public class KeyCloak {
 
         saveState(state);
 
-        String url = config.realmUrl
+        String url = config.getRealmUrl()
                 + "/tokens/login"
-                + "?client_id=" + IOUtils.encodeURIComponent(config.clientId)
+                + "?client_id=" + IOUtils.encodeURIComponent(config.getClientId())
                 + "&redirect_uri=" + IOUtils.encodeURIComponent(redirectUri)
                 + "&state=" + IOUtils.encodeURIComponent(state)
                 + "&response_type=code";
@@ -46,7 +46,7 @@ public class KeyCloak {
     }
 
     public String getClientId() {
-        return config.clientId;
+        return config.getClientId();
     }
 
     public String getRedirectUri() {
@@ -54,10 +54,10 @@ public class KeyCloak {
     }
 
     public String getClientSecret() {
-        return config.clientSecret;
+        return config.getClientSecret();
     }
 
     public String getBaseURL() {
-        return config.realmUrl;
+        return config.getRealmUrl();
     }
 }

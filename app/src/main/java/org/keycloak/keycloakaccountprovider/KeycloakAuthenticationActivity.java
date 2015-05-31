@@ -18,24 +18,26 @@ import android.webkit.WebViewClient;
 
 import com.google.gson.Gson;
 
-import org.keycloak.keycloakaccountprovider.token.AccessTokenExchangeLoader;
 import org.keycloak.keycloakaccountprovider.util.IOUtils;
-
-import java.security.Key;
 
 
 public class KeycloakAuthenticationActivity extends AccountAuthenticatorActivity implements LoaderManager.LoaderCallbacks<KeyCloakAccount> {
 
     private KeyCloak kc;
     private static final String ACCESS_TOKEN_KEY = "accessToken";
+    AccountManager am;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_my);
 
+        Log.i(this.getClass().getName(), "onCreate");
+
+        am = AccountManager.get(getBaseContext());
+
         kc = new KeyCloak(this);
-        Account[] accounts = AccountManager.get(this).getAccountsByType(KeyCloak.ACCOUNT_TYPE);
+        //Account[] accounts = AccountManager.get(this).getAccountsByType(KeyCloak.ACCOUNT_TYPE);
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
                     .add(R.id.container, new PlaceholderFragment())
@@ -56,24 +58,25 @@ public class KeycloakAuthenticationActivity extends AccountAuthenticatorActivity
         accountBundle.putString(KeyCloak.ACCOUNT_KEY, keyCloakAccountJson);
 
 
-        AccountManager am = AccountManager.get(this);
-        Account androidAccount = new Account(keyCloakAccount.getPreferredUsername(), KeyCloak.ACCOUNT_TYPE);
-        Account[] accounts = am.getAccountsByType(KeyCloak.ACCOUNT_TYPE);
-        for (Account existingAccount : accounts) {
-            if (existingAccount.name == androidAccount.name) {
-                am.setUserData(androidAccount, KeyCloak.ACCOUNT_KEY, keyCloakAccountJson);
-                if (response != null) {
-                    response.onResult(accountBundle);
+        if (keyCloakAccount.getPreferredUsername() != null) {
+            Account androidAccount = new Account(keyCloakAccount.getPreferredUsername(), KeyCloak.ACCOUNT_TYPE);
+            Account[] accounts = am.getAccountsByType(KeyCloak.ACCOUNT_TYPE);
+            for (Account existingAccount : accounts) {
+                if (existingAccount.name.equals(androidAccount.name)) {
+                    am.setUserData(androidAccount, KeyCloak.ACCOUNT_KEY, keyCloakAccountJson);
+                    if (response != null) {
+                        response.onResult(accountBundle);
+                    }
+                    finish();
                 }
-                finish();
             }
-        }
 
-        am.removeAccount(androidAccount, null, null);
-        am.addAccountExplicitly(androidAccount, null, accountBundle);
+            //am.removeAccount(androidAccount, null, null);
+            am.addAccountExplicitly(androidAccount, null, accountBundle);
 
-        if (response != null) {
-            response.onResult(accountBundle);
+            if (response != null) {
+                response.onResult(accountBundle);
+            }
         }
         finish();
 
@@ -117,13 +120,15 @@ public class KeycloakAuthenticationActivity extends AccountAuthenticatorActivity
 
                     if (url.contains("code=")) {
                         final String token = IOUtils.fetchToken(url);
-                        Log.d("TOKEN", token);
+                        Log.i("TOKEN", token);
 
                         Bundle data = new Bundle();
                         data.putString(ACCESS_TOKEN_KEY, token);
                         getLoaderManager().initLoader(1, data, (LoaderManager.LoaderCallbacks) (getActivity())).forceLoad();
 
                         return true;
+                    } else {
+                        Log.i("No TOKEN", url);
                     }
 
                     return false;

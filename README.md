@@ -1,3 +1,6 @@
+*****
+# Original README
+*****
 # KeyCloak Authenticator
 
 This is an implementation of AbstractAccountAuthenticator for KeyCloak.  

@@ -19,11 +19,11 @@ public final class KeyCloakConfig {
 
     private static final String TAG = KeyCloakConfig.class.getSimpleName().toUpperCase();
 
-    public final String realmUrl;
-    public final String authServerUrl;
-    public final String realm;
-    public final String clientId;
-    public final String clientSecret;
+    private final String realmUrl;
+    private final String authServerUrl;
+    private final String realm;
+    private final String clientId;
+    private final String clientSecret;
 
     private static KeyCloakConfig instace;
 
@@ -54,6 +54,23 @@ public final class KeyCloakConfig {
         return  instace;
     }
 
+    public String getRealmUrl() {
+        return realmUrl;
+    }
 
+    public String getAuthServerUrl() {
+        return authServerUrl;
+    }
 
+    public String getRealm() {
+        return realm;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public String getClientSecret() {
+        return clientSecret;
+    }
 }

@@ -1,10 +1,11 @@
 {
-  "realm": "sup",
-  "realm-public-key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDLMhMGrOhZgX/FcVPIYRSk8pkYh7CE6ZHdULpveE4HCHMSVlJ8MugI/uSVwTOWPCqc8XAqHcAY6wtCiKRcKDQOcvUfaeIPzcR6xg8GuJzhfO2kMO2Vv+HgXIdfh+z+qBip3UolNrjimob8sobtqGllLi721y7ZKu+9KIQGjjFkXQIDAQAB",
-  "auth-server-url": "https://auth-coffeeregister.rhcloud.com/auth",
+  "realm": "test",
+  "realm-public-key": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCJKoFWKUFF/td9Dt5KK3WppQzXeDcf/FHr5uJdrhkcRmYpEOogXx07JYvDMWQcwUzL6yo8E+ejdgQ3aN8az1EmMmozh1kpagyqJoMzCzMN3t3KupNiTG+ESd89MkbepP8XO0HZiNlggyPz/SJCNjld9VfWd9wZuJgeTZM4X3FCVwIDAQAB",
+  "auth-server-url": "https://wattsec.com/auth",
   "ssl-required": "external",
-  "resource": "Android",
+  "resource": "account",
   "credentials": {
-    "secret": "47abb5a6-7069-4b70-b9fb-d5ad6db207fd"
-  }
+    "secret": "13475c6f-c053-4c7e-9fdf-ff3729177739"
+  },
+  "use-resource-role-mappings": true
 }

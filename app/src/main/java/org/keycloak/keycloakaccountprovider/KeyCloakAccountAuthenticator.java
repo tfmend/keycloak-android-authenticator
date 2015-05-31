@@ -9,12 +9,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Base64;
+import android.util.Log;
 
 import com.google.gson.Gson;
 
-import org.jboss.aerogear.android.http.HeaderAndBody;
-import org.jboss.aerogear.android.http.HttpException;
-import org.jboss.aerogear.android.impl.http.HttpRestProvider;
+//import org.jboss.aerogear.android.http.HeaderAndBody;
+//import org.jboss.aerogear.android.http.HttpException;
+//import org.jboss.aerogear.android.impl.http.HttpRestProvider;
 import org.json.JSONObject;
 import org.keycloak.keycloakaccountprovider.util.IOUtils;
 import org.keycloak.keycloakaccountprovider.util.TokenExchangeUtils;
@@ -73,12 +74,19 @@ public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator 
     }
 
     @Override
-    public Bundle getAuthToken(AccountAuthenticatorResponse accountAuthenticatorResponse, Account account, String s, Bundle bundle) throws NetworkErrorException {
+    public Bundle getAuthToken(AccountAuthenticatorResponse accountAuthenticatorResponse, Account account, String authTokenType, Bundle loginOptions) throws NetworkErrorException {
 
+
+        if (!KeyCloak.ACCOUNT_TYPE.equals(authTokenType)) {
+            Log.i(this.getClass().getName(), KeyCloak.ACCOUNT_TYPE + "!=" + authTokenType);
+            final Bundle result = new Bundle();
+            result.putString(AccountManager.KEY_ERROR_MESSAGE, "invalid authTokenType");
+            return result;
+        }
 
         Account[] accounts = am.getAccountsByType(KeyCloak.ACCOUNT_TYPE);
         for (Account existingAccount : accounts) {
-            if (existingAccount.name == account.name) {
+            if (existingAccount.name.equals(account.name)) {
                break;
             }
         }
@@ -87,30 +95,49 @@ public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator 
         String keyCloackAccount = am.getUserData(account, KeyCloak.ACCOUNT_KEY);
         KeyCloakAccount kcAccount = new Gson().fromJson(keyCloackAccount, KeyCloakAccount.class);
         if (kcAccount == null) {
+            Log.i(this.getClass().getName(), "No Account");
             Bundle toReturn = new Bundle();
             toReturn.putParcelable(AccountManager.KEY_INTENT, new Intent(context, KeycloakAuthenticationActivity.class).putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse));
-            toReturn.putParcelable(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse);
+            //toReturn.putParcelable(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse);
             return toReturn;
-
         }
+
+        Log.i(this.getClass().getName(), "Expires On:"+ new Date(kcAccount.getExpiresOn()));
+        Log.i(this.getClass().getName(), "Refresh Expires On:"+ new Date(kcAccount.getRefreshExpiresOn()));
+
         if (new Date(kcAccount.getExpiresOn()).before(new Date())) {
-            try {
+            if (new Date(kcAccount.getRefreshExpiresOn()).before(new Date())) {
+                Log.i(this.getClass().getName(), "Refresh Token expired :" + kcAccount.getAccessToken());
+                am.invalidateAuthToken(KeyCloak.ACCOUNT_TYPE, kcAccount.getAccessToken());
+                Bundle toReturn = new Bundle();
+                toReturn.putParcelable(AccountManager.KEY_INTENT, new Intent(context, KeycloakAuthenticationActivity.class).putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse));
+                //toReturn.putParcelable(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse);
+                return toReturn;
+            } else {
+                Log.i(this.getClass().getName(),"Token expired");
                 TokenExchangeUtils.refreshToken(kcAccount, kc);
                 String accountJson = new Gson().toJson(kcAccount);
                 am.setUserData(new Account(kcAccount.getPreferredUsername(), KeyCloak.ACCOUNT_TYPE), KeyCloak.ACCOUNT_KEY, accountJson);
-            } catch (HttpException e) {
-                if (e.getStatusCode() / 100 == 4) {
-                    Bundle toReturn = new Bundle();
-                    toReturn.putParcelable(AccountManager.KEY_INTENT, new Intent(context, KeycloakAuthenticationActivity.class).putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse));
-                    toReturn.putParcelable(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse);
-                    return toReturn;
-                } else {
-                    Bundle toReturn = new Bundle();
-                    toReturn.putString(AccountManager.KEY_ERROR_CODE, e.getStatusCode() + "");
-                    toReturn.putString(AccountManager.KEY_ERROR_MESSAGE, e.getMessage());
-                    return toReturn;
-                }
             }
+
+
+//            try {
+//                TokenExchangeUtils.refreshToken(kcAccount, kc);
+//                String accountJson = new Gson().toJson(kcAccount);
+//                am.setUserData(new Account(kcAccount.getPreferredUsername(), KeyCloak.ACCOUNT_TYPE), KeyCloak.ACCOUNT_KEY, accountJson);
+//            } catch (HttpException e) {
+//                if (e.getStatusCode() / 100 == 4) {
+//                    Bundle toReturn = new Bundle();
+//                    toReturn.putParcelable(AccountManager.KEY_INTENT, new Intent(context, KeycloakAuthenticationActivity.class).putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse));
+//                    toReturn.putParcelable(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse);
+//                    return toReturn;
+//                } else {
+//                    Bundle toReturn = new Bundle();
+//                    toReturn.putString(AccountManager.KEY_ERROR_CODE, e.getStatusCode() + "");
+//                    toReturn.putString(AccountManager.KEY_ERROR_MESSAGE, e.getMessage());
+//                    return toReturn;
+//                }
+//            }
         }
 
         Bundle toReturn = new Bundle();
