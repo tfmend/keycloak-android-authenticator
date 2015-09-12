@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accountType="org.keycloak.Account"
-    android:icon="@drawable/ic_launcher"
+    android:accountType="@string/account_type"
+    android:icon="@drawable/ic_keycloak_launcher"
     android:customTokens="true"
-    android:smallIcon="@drawable/ic_launcher"
+    android:smallIcon="@drawable/ic_keycloak_launcher"
     android:label="@string/add_account_label" />

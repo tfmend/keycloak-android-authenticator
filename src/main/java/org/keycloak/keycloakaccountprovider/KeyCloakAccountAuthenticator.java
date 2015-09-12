@@ -8,34 +8,26 @@ import android.accounts.NetworkErrorException;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Base64;
 import android.util.Log;
 
 import com.google.gson.Gson;
 
-//import org.jboss.aerogear.android.http.HeaderAndBody;
-//import org.jboss.aerogear.android.http.HttpException;
-//import org.jboss.aerogear.android.impl.http.HttpRestProvider;
-import org.json.JSONObject;
-import org.keycloak.keycloakaccountprovider.util.IOUtils;
 import org.keycloak.keycloakaccountprovider.util.TokenExchangeUtils;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
  * Created by Summers on 9/12/2014.
  */
-public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator {
+public class KeyCloakAccountAuthenticator extends AbstractAccountAuthenticator {
+
+    private static final String TAG = KeyCloakAccountAuthenticator.class.getCanonicalName();
 
     private final Context context;
     private final AccountManager am;
     private final KeyCloak kc;
+
     public KeyCloakAccountAuthenticator(Context context) {
         super(context);
         this.context = context.getApplicationContext();
@@ -50,19 +42,27 @@ public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator 
 
     @Override
     public Bundle addAccount(AccountAuthenticatorResponse response, String accountType, String authTokenType, String[] requiredFeatures, Bundle options) throws NetworkErrorException {
+        Log.d(TAG, "addAccount called!");
+
         Bundle toReturn = new Bundle();
         AccountManager am = AccountManager.get(context);
 
-        if (options == null || options.getString(KeyCloak.ACCOUNT_KEY) == null) {
+        /*
+            Launch activity to account creation
+         */
+        if (options == null || options.getString(this.context.getString(R.string.account_key)) == null) {
             toReturn.putParcelable(AccountManager.KEY_INTENT, new Intent(context, KeycloakAuthenticationActivity.class).putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response));
             toReturn.putParcelable(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
-        } else {
-            KeyCloakAccount account = new Gson().fromJson(options.getString(KeyCloak.ACCOUNT_KEY), KeyCloakAccount.class);
-            am.removeAccount(new Account(account.getPreferredUsername(), KeyCloak.ACCOUNT_TYPE), null, null);
-            am.addAccountExplicitly(new Account(account.getPreferredUsername(), KeyCloak.ACCOUNT_TYPE), null, options);
+        }
+        /*
+            Retrieves from stored account JSON
+         */
+        else {
+            KeyCloakAccount account = new Gson().fromJson(options.getString(this.context.getString(R.string.account_key)), KeyCloakAccount.class);
+            am.removeAccount(new Account(account.getPreferredUsername(), this.context.getString(R.string.account_type)), null, null);
+            am.addAccountExplicitly(new Account(account.getPreferredUsername(), this.context.getString(R.string.account_type)), null, options);
             toReturn.putString(AccountManager.KEY_ACCOUNT_NAME, account.getPreferredUsername());
-            toReturn.putString(AccountManager.KEY_ACCOUNT_TYPE, KeyCloak.ACCOUNT_TYPE);
-
+            toReturn.putString(AccountManager.KEY_ACCOUNT_TYPE, this.context.getString(R.string.account_type));
         }
 
         return toReturn;
@@ -75,24 +75,24 @@ public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator 
 
     @Override
     public Bundle getAuthToken(AccountAuthenticatorResponse accountAuthenticatorResponse, Account account, String authTokenType, Bundle loginOptions) throws NetworkErrorException {
+        Log.d(TAG, "getAuthToken called!");
 
-
-        if (!KeyCloak.ACCOUNT_TYPE.equals(authTokenType)) {
-            Log.i(this.getClass().getName(), KeyCloak.ACCOUNT_TYPE + "!=" + authTokenType);
+        if (!this.context.getString(R.string.account_type).equals(authTokenType)) {
+            Log.i(this.getClass().getName(), this.context.getString(R.string.account_type) + "!=" + authTokenType);
             final Bundle result = new Bundle();
             result.putString(AccountManager.KEY_ERROR_MESSAGE, "invalid authTokenType");
             return result;
         }
 
-        Account[] accounts = am.getAccountsByType(KeyCloak.ACCOUNT_TYPE);
+        Account[] accounts = am.getAccountsByType(this.context.getString(R.string.account_type));
         for (Account existingAccount : accounts) {
             if (existingAccount.name.equals(account.name)) {
-               break;
+                break;
             }
         }
 
 
-        String keyCloackAccount = am.getUserData(account, KeyCloak.ACCOUNT_KEY);
+        String keyCloackAccount = am.getUserData(account, this.context.getString(R.string.account_key));
         KeyCloakAccount kcAccount = new Gson().fromJson(keyCloackAccount, KeyCloakAccount.class);
         if (kcAccount == null) {
             Log.i(this.getClass().getName(), "No Account");
@@ -102,22 +102,22 @@ public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator 
             return toReturn;
         }
 
-        Log.i(this.getClass().getName(), "Expires On:"+ new Date(kcAccount.getExpiresOn()));
-        Log.i(this.getClass().getName(), "Refresh Expires On:"+ new Date(kcAccount.getRefreshExpiresOn()));
+        Log.i(this.getClass().getName(), "Expires On:" + new Date(kcAccount.getExpiresOn()));
+        Log.i(this.getClass().getName(), "Refresh Expires On:" + new Date(kcAccount.getRefreshExpiresOn()));
 
         if (new Date(kcAccount.getExpiresOn()).before(new Date())) {
             if (new Date(kcAccount.getRefreshExpiresOn()).before(new Date())) {
                 Log.i(this.getClass().getName(), "Refresh Token expired :" + kcAccount.getAccessToken());
-                am.invalidateAuthToken(KeyCloak.ACCOUNT_TYPE, kcAccount.getAccessToken());
+                am.invalidateAuthToken(this.context.getString(R.string.account_type), kcAccount.getAccessToken());
                 Bundle toReturn = new Bundle();
                 toReturn.putParcelable(AccountManager.KEY_INTENT, new Intent(context, KeycloakAuthenticationActivity.class).putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse));
                 //toReturn.putParcelable(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, accountAuthenticatorResponse);
                 return toReturn;
             } else {
-                Log.i(this.getClass().getName(),"Token expired");
+                Log.i(this.getClass().getName(), "Token expired");
                 TokenExchangeUtils.refreshToken(kcAccount, kc);
                 String accountJson = new Gson().toJson(kcAccount);
-                am.setUserData(new Account(kcAccount.getPreferredUsername(), KeyCloak.ACCOUNT_TYPE), KeyCloak.ACCOUNT_KEY, accountJson);
+                am.setUserData(new Account(kcAccount.getPreferredUsername(), this.context.getString(R.string.account_type)), this.context.getString(R.string.account_key), accountJson);
             }
 
 
@@ -143,7 +143,7 @@ public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator 
         Bundle toReturn = new Bundle();
         toReturn.putString(AccountManager.KEY_AUTHTOKEN, kcAccount.getAccessToken());
         toReturn.putString(AccountManager.KEY_ACCOUNT_NAME, kcAccount.getPreferredUsername());
-        toReturn.putString(AccountManager.KEY_ACCOUNT_TYPE, KeyCloak.ACCOUNT_TYPE);
+        toReturn.putString(AccountManager.KEY_ACCOUNT_TYPE, this.context.getString(R.string.account_type));
         return toReturn;
     }
 
@@ -156,7 +156,7 @@ public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator 
     @Override
     public Bundle updateCredentials(AccountAuthenticatorResponse accountAuthenticatorResponse, Account account, String s, Bundle bundle) throws NetworkErrorException {
 
-        String keyCloackAccount = AccountManager.get(context).getUserData(account, KeyCloak.ACCOUNT_KEY);
+        String keyCloackAccount = AccountManager.get(context).getUserData(account, this.context.getString(R.string.account_key));
         KeyCloakAccount kca = new Gson().fromJson(keyCloackAccount, KeyCloakAccount.class);
 
         if (kca.getExpiresOn() < new Date().getTime()) {
@@ -165,7 +165,7 @@ public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator 
 
         Bundle toReturn = new Bundle();
         toReturn.putString(AccountManager.KEY_ACCOUNT_NAME, kca.getPreferredUsername());
-        toReturn.putString(AccountManager.KEY_ACCOUNT_TYPE, KeyCloak.ACCOUNT_TYPE);
+        toReturn.putString(AccountManager.KEY_ACCOUNT_TYPE, this.context.getString(R.string.account_type));
 
         return toReturn;
     }
@@ -174,7 +174,6 @@ public class KeyCloakAccountAuthenticator  extends AbstractAccountAuthenticator 
     public Bundle hasFeatures(AccountAuthenticatorResponse accountAuthenticatorResponse, Account account, String[] strings) throws NetworkErrorException {
         return null;
     }
-
 
 
 }

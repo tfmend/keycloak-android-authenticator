@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">KeyCloakAccountProvider</string>
+    <string name="action_settings">Settings</string>
+    <string name="add_account_label">KeyCloak Secured Account</string>
+
+    <string name="account_key">org.keycloak.KeyCloakAccount</string>
+    <string name="account_type">org.keycloak.Account</string>
+    <!--<string name="token_type">org.keycloak.Account.token</string>-->
+
+    <string name="callback">urn:ietf:wg:oauth:2.0:oob</string>
+
+</resources>

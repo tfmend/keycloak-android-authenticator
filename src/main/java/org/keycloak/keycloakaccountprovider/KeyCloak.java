@@ -12,9 +12,6 @@ import java.util.UUID;
  */
 public class KeyCloak {
 
-    public static final String ACCOUNT_KEY = "org.keycloak.KeyCloakAccount";
-    public static final String ACCOUNT_TYPE = "org.keycloak.Account";
-    //public static final String AUTHTOKEN_TYPE = "org.keycloak.Account.token";
     private final KeyCloakConfig config;
     private final Context context;
 
@@ -50,7 +47,7 @@ public class KeyCloak {
     }
 
     public String getRedirectUri() {
-        return "urn:ietf:wg:oauth:2.0:oob";
+        return this.context.getResources().getString(R.string.callback);
     }
 
     public String getClientSecret() {

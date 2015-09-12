@@ -55,15 +55,15 @@ public class KeycloakAuthenticationActivity extends AccountAuthenticatorActivity
         AccountAuthenticatorResponse response = getIntent().getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
         String keyCloakAccountJson = new Gson().toJson(keyCloakAccount);
         Bundle accountBundle = new Bundle();
-        accountBundle.putString(KeyCloak.ACCOUNT_KEY, keyCloakAccountJson);
+        accountBundle.putString(getString(R.string.account_key), keyCloakAccountJson);
 
 
         if (keyCloakAccount.getPreferredUsername() != null) {
-            Account androidAccount = new Account(keyCloakAccount.getPreferredUsername(), KeyCloak.ACCOUNT_TYPE);
-            Account[] accounts = am.getAccountsByType(KeyCloak.ACCOUNT_TYPE);
+            Account androidAccount = new Account(keyCloakAccount.getPreferredUsername(), getString(R.string.account_type));
+            Account[] accounts = am.getAccountsByType(getString(R.string.account_type));
             for (Account existingAccount : accounts) {
                 if (existingAccount.name.equals(androidAccount.name)) {
-                    am.setUserData(androidAccount, KeyCloak.ACCOUNT_KEY, keyCloakAccountJson);
+                    am.setUserData(androidAccount, getString(R.string.account_key), keyCloakAccountJson);
                     if (response != null) {
                         response.onResult(accountBundle);
                     }
