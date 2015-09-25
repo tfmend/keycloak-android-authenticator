@@ -1,6 +1,7 @@
 package org.keycloak.keycloakaccountprovider;
 
 import android.accounts.Account;
+import android.accounts.AccountAuthenticatorActivity;
 import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.app.Activity;
@@ -8,18 +9,19 @@ import android.app.Fragment;
 import android.app.LoaderManager;
 import android.content.Loader;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 import com.google.gson.Gson;
 
+import org.keycloak.keycloakaccountprovider.util.IOUtils;
 
-public class KeycloakAuthenticationActivity extends AccountAuthenticatorActivity implements LoaderManager.LoaderCallbacks<KeyCloakAccount> {
+
+public class KeycloakAuthenticationWebViewActivity extends AccountAuthenticatorActivity implements LoaderManager.LoaderCallbacks<KeyCloakAccount> {
 
     private KeyCloak kc;
     private static final String ACCESS_TOKEN_KEY = "accessToken";
@@ -31,6 +33,7 @@ public class KeycloakAuthenticationActivity extends AccountAuthenticatorActivity
         setContentView(R.layout.activity_login);
 
         Log.i(this.getClass().getName(), "onCreate");
+
         am = AccountManager.get(getBaseContext());
 
         kc = new KeyCloak(this);
@@ -93,7 +96,6 @@ public class KeycloakAuthenticationActivity extends AccountAuthenticatorActivity
 
         private KeyCloak kc;
         private WebView webView;
-        private Activity activity;
 
         public PlaceholderFragment() {
 
@@ -102,7 +104,6 @@ public class KeycloakAuthenticationActivity extends AccountAuthenticatorActivity
         @Override
         public void onAttach(Activity activity) {
             super.onAttach(activity);
-            this.activity = activity;
             if (kc == null) {
                 kc = new KeyCloak(activity);
             }
@@ -111,40 +112,31 @@ public class KeycloakAuthenticationActivity extends AccountAuthenticatorActivity
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.keycloak_login_fragment, container, false);
+            View rootView = inflater.inflate(R.layout.keycloak_login_webview_fragment, container, false);
+            webView = (WebView) rootView.findViewById(R.id.webview);
+            webView.setWebViewClient(new WebViewClient() {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, String url) {
 
-            final Toolbar toolbar = (Toolbar) rootView.findViewWithTag("app_bar");
+                    if (url.contains("code=")) {
+                        final String token = IOUtils.fetchToken(url);
+                        Log.i("TOKEN", token);
 
-            if (toolbar != null) {
-                ((AppCompatActivity)this.activity).setSupportActionBar(toolbar);
-                ((AppCompatActivity)this.activity).getSupportActionBar()
-                        .setDisplayHomeAsUpEnabled(true);
-            }
+                        Bundle data = new Bundle();
+                        data.putString(ACCESS_TOKEN_KEY, token);
+                        getLoaderManager().initLoader(1, data, (LoaderManager.LoaderCallbacks) (getActivity())).forceLoad();
 
-//            webView = (WebView) rootView.findViewById(R.id.webview);
-//            webView.setWebViewClient(new WebViewClient() {
-//                @Override
-//                public boolean shouldOverrideUrlLoading(WebView view, String url) {
-//
-//                    if (url.contains("code=")) {
-//                        final String token = IOUtils.fetchToken(url);
-//                        Log.i("TOKEN", token);
-//
-//                        Bundle data = new Bundle();
-//                        data.putString(ACCESS_TOKEN_KEY, token);
-//                        getLoaderManager().initLoader(1, data, (LoaderManager.LoaderCallbacks) (getActivity())).forceLoad();
-//
-//                        return true;
-//                    } else {
-//                        Log.i("No TOKEN", url);
-//                    }
-//
-//                    return false;
-//                }
-//
-//
-//            });
-//            webView.loadUrl(kc.createLoginUrl());
+                        return true;
+                    } else {
+                        Log.i("No TOKEN", url);
+                    }
+
+                    return false;
+                }
+
+
+            });
+            webView.loadUrl(kc.createLoginUrl());
             return rootView;
         }
 

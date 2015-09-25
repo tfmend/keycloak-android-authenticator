@@ -46,7 +46,6 @@ public class KeyCloakAccountAuthenticator extends AbstractAccountAuthenticator {
 
         Bundle toReturn = new Bundle();
         AccountManager am = AccountManager.get(context);
-
         /*
             Launch activity to account creation
          */

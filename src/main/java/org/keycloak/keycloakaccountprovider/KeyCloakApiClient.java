@@ -8,6 +8,10 @@ import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+
+import com.google.gson.Gson;
 
 import java.io.IOException;
 
@@ -43,44 +47,57 @@ public class KeyCloakApiClient {
             throw new IllegalStateException("You must pass a not null OnKeyCloakLoginListener");
         }
 
-        if (!this.hasConnected()) {
+        Account[] accounts = this.am.getAccountsByType(context.getString(R.string.account_type));
 
-            this.am.addAccount(this.context.getString(R.string.account_type), this.context
-                    .getString(R.string.account_type), null, null, this.context, new AccountManagerCallback<Bundle>() {
-                @Override
-                public void run(AccountManagerFuture<Bundle> accountManagerFuture) {
-                    try {
-                        keyCloakLoginListener.onLogin(accountManagerFuture.getResult()
-                                .getString(AccountManager.KEY_AUTHTOKEN));
-                    }
+        Bundle options = null;
+        if (accounts.length > 0) {
+
+            String kca = this.am.getUserData(accounts[0], this.context.getString(R
+                    .string.account_key));
+
+            options = new Bundle();
+            options.putString(context.getString(R.string.account_key), kca);
+        }
+
+        AccountManagerFuture<Bundle> future = this.am.addAccount(this.context.getString(R.string.account_type), this.context
+                .getString(R.string.account_type), null, options, this.context, new
+                AccountManagerCallback<Bundle>() {
+            @Override
+            public void run(AccountManagerFuture<Bundle> accountManagerFuture) {
+                try {
+
+                    final String accessToken = accountManagerFuture.getResult()
+                            .getString(AccountManager.KEY_AUTHTOKEN);
+                    Log.i(TAG, String.valueOf(accessToken));
+
+                    context.setResult(Activity.RESULT_OK);
+
+                    keyCloakLoginListener.onLogin(accessToken);
+                }
                     /*
                         If the operation was canceled for any reason, including the user
                         canceling the creation process or adding accounts (of this type) has been disabled by policy
-                     */
-                    catch (OperationCanceledException e) {
-                        keyCloakLoginListener.onFail(new KeyCloakConnectionResult
-                                (KeyCloakConnectionResult.CANCELED));
-                    }
+                     */ catch (OperationCanceledException e) {
+                    keyCloakLoginListener.onFail(new KeyCloakConnectionResult
+                            (KeyCloakConnectionResult.CANCELED));
+                }
                     /*
                         If the authenticator experienced an I/O problem creating a new account,
                         usually because of network trouble
-                     */
-                    catch (IOException e) {
-                        keyCloakLoginListener.onFail(new KeyCloakConnectionResult
-                                (KeyCloakConnectionResult.CONN_ERROR));
-                    }
+                     */ catch (IOException e) {
+                    keyCloakLoginListener.onFail(new KeyCloakConnectionResult
+                            (KeyCloakConnectionResult.CONN_ERROR));
+                }
                     /*
                         If no authenticator was registered for this account type or the
                         authenticator failed to respond
-                     */
-                    catch (AuthenticatorException e) {
-                        keyCloakLoginListener.onFail(new KeyCloakConnectionResult
-                                (KeyCloakConnectionResult.AUTH_EXCEPTION));
-                    }
+                     */ catch (AuthenticatorException e) {
+                    keyCloakLoginListener.onFail(new KeyCloakConnectionResult
+                            (KeyCloakConnectionResult.AUTH_EXCEPTION));
                 }
-            }, null);
+            }
+        }, new Handler());
 
-        }
     }
 
     public void logout(final OnKeyCloakLogoutListener onKeyCloakLogoutListener) {
@@ -91,24 +108,8 @@ public class KeyCloakApiClient {
         onKeyCloakLogoutListener.onLogout();
     }
 
-    private boolean hasConnected() {
-        return this.am.getAccountsByType(this.context.getString(R.string.account_type)).length > 0;
-    }
-
-    private void getAuthToken() {
-        Account[] accounts = this.am.getAccountsByType(this.context.getString(R.string
-                .account_type));
-        Account theOne = accounts[0];
-        AccountManagerFuture<Bundle> authToken = this.am.getAuthToken(theOne, this
-                .context.getString(R.string.account_type), null, this.context, new
-                AccountManagerCallback<Bundle>() {
-
-                    @Override
-                    public void run(AccountManagerFuture<Bundle> accountManagerFuture) {
-                        //keyCloakLoginListener.onLogin(accountManagerFuture.getResult()
-                        //        .getString(AccountManager.KEY_AUTHTOKEN));
-                    }
-                }, null);
+    public boolean isConnected() {
+        return mSessionManager.isConnected();
     }
 
     public interface OnKeyCloakLoginListener {
